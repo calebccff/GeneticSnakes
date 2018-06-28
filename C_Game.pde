@@ -28,7 +28,7 @@ class Game{
     thread.create();
   }
 
-  void run() {
+  boolean run() {
     time++;
     timeAlive++;
     boolean eaten = snake.run(food);
@@ -37,17 +37,22 @@ class Game{
       score += 20f/float(time);
       time = 0;
     }
-    if(snake.checkDead() || time > 1800){
-      thread = new GameThread(this);
+    if(!alive || (snake.checkDead() && time > 10) || time > 600){
       alive = false;
+      return false;
     }
+    return true;
   }
 
   float fitness(){
     return
-    score*10
+    score*20
     +timeAlive*0.003;
 
+  }
+
+  void stop(){
+    alive = false;
   }
 
   void display(int x, int y, int size) {

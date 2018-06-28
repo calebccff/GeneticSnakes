@@ -38,7 +38,7 @@ int countAlive(){
 void nextGeneration(){
   ++generation;
   for(int i = 0; i < games.size(); i++){
-    games.get(i).thread.stop();
+    games.get(i).stop();
   }
   breed();
 }
@@ -64,17 +64,18 @@ void display(){
   fill(255, 0, 0);
   textSize(12);
   for(int i = 0; i < 100; i++){
-    if(!games.get(i).alive) continue;
+    Game g = games.get(i);
+    if(!g.alive) continue;
     int x = TILEWIDTH+(i*TILEWIDTH)%(width-TILEWIDTH);
     int y = int((i*TILEWIDTH)/width)*TILEHEIGHT;
     int size = min(TILEWIDTH, TILEHEIGHT);
-    games.get(i).display(x, y, size);
+    g.display(x, y, size);
     stroke(255);
     line(x, y, x+size, y);
     line(x+size, y, x+size, y+size);
     line(x+size, y+size, x, y+size);
     line(x, y+size, x, y);
-    text(games.get(i).fitness()+"\n"+games.get(i).alive, x, y+10);
+    text(g.fitness()+"\n"+g.snake.pos.size(), x, y+10);
   }
   textSize(16);
   text(generation+" - "+games.size()+"\n"+frameRate, 10, 20);

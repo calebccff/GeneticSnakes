@@ -1,4 +1,4 @@
-final int TICKRATE = 600; //Ticks per second
+final int TICKRATE = 120; //Ticks per second
 
 class GameThread extends Thread { //A custom thread class to easily multithread
   private Thread t;
@@ -10,11 +10,13 @@ class GameThread extends Thread { //A custom thread class to easily multithread
   }
 
   public void run() { //Takes it's own section of the game array
-
     while(true){
       int startTime = millis();
       //Run game
-      game.run();
+      boolean run = game.run();
+      if(!run){
+        break;
+      }
       delay(constrain(1000/TICKRATE-(millis()-startTime), 0, 1000));
     }
   }
