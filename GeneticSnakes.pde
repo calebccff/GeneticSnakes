@@ -1,8 +1,10 @@
 import java.util.*;
 
 final int G_SIZE = 32;
-final int GAMESIZE = 300;
+final int GAMESIZE = 150;
 int TILEWIDTH, TILEHEIGHT;
+int GRIDWIDTH = 8;
+int GRIDHEIGHT = 5;
 ArrayList<Game> games = new ArrayList<Game>();
 
 int generation = 0;
@@ -14,8 +16,8 @@ void setup(){
   }
   noSmooth();
 
-  TILEWIDTH = int(width/10);
-  TILEHEIGHT = int(height/10);
+  TILEWIDTH = int(width/GRIDWIDTH);
+  TILEHEIGHT = int(height/GRIDHEIGHT);
 }
 
 void draw(){
@@ -63,10 +65,10 @@ void display(){
   background(0);
   fill(255, 0, 0);
   textSize(12);
-  for(int i = 0; i < 100; i++){
+  for(int i = 0; i < (GRIDWIDTH*GRIDHEIGHT)-1; i++){
     Game g = games.get(i);
     if(!g.alive) continue;
-    int x = TILEWIDTH+(i*TILEWIDTH)%(width-TILEWIDTH);
+    int x = (i*TILEWIDTH)%width;
     int y = int((i*TILEWIDTH)/width)*TILEHEIGHT;
     int size = min(TILEWIDTH, TILEHEIGHT);
     g.display(x, y, size);
@@ -75,8 +77,8 @@ void display(){
     line(x+size, y, x+size, y+size);
     line(x+size, y+size, x, y+size);
     line(x, y+size, x, y);
-    text(g.fitness()+"\n"+g.snake.pos.size(), x, y+10);
+    text(g.fitness()+"\n"+g.snake.pos.size()+"\n"+g.snake.dir, x, y+10);
   }
   textSize(16);
-  text(generation+" - "+games.size()+"\n"+frameRate, 10, 20);
+  //text(generation+" - "+games.size()+"\n"+frameRate, 10, 80);
 }

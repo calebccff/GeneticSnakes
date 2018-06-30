@@ -37,7 +37,7 @@ class Game{
       score += 20f/float(time);
       time = 0;
     }
-    if(!alive || (snake.checkDead() && time > 10) || time > 600){
+    if(!alive || (snake.checkDead() && timeAlive > 5) || time > 8000){
       alive = false;
       return false;
     }
@@ -47,7 +47,8 @@ class Game{
   float fitness(){
     return
     score*20
-    +timeAlive*0.003;
+    +timeAlive*0.003
+    +snake.pos.size()*0.1;
 
   }
 

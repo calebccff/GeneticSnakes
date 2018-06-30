@@ -32,8 +32,10 @@ class Snake {
       if(dist(0, search.heading(), 0, dir.heading()) == PI) break;
       inputs[i] = wallDist(search);
       search.rotate(HALF_PI);
+      search.x = round(search.x);
+      search.y = round(search.y);
     }
-    inputs[1] = map(dist(f.pos.x, f.pos.y, head().x, head().y), 0, dist(0, 0, G_SIZE, G_SIZE), 0, 1);
+    inputs[1] = map(dist(f.pos.x, f.pos.y, head().x, head().y), 0, dist(0, 0, G_SIZE, G_SIZE), 1, 0);
 
     float output = brain.propForward(inputs)[0];
     if(output < 0.45){
@@ -43,15 +45,23 @@ class Snake {
     }else{
       dir.rotate(HALF_PI);
     }
+    dir.x = round(dir.x);
+    dir.y = round(dir.y);
 
     pos.add(PVector.add(head(), dir));
-    head().x = round(head().x);
-    head().y = round(head().y);
+    //roundAll();
     if(!f.eaten(this)){
       pos.remove(0);
       return false;
     }
     return true;
+  }
+
+  void roundAll(){
+    for(int i = 0; i < pos.size(); i++){
+      pos.get(i).x = round(pos.get(i).x);
+      pos.get(i).y = round(pos.get(i).y);
+    }
   }
 
   boolean checkDead(){
@@ -73,8 +83,13 @@ class Snake {
 
   float wallDist(PVector dir){
     PVector trace = head().copy();
-    while(trace.x >= 0 && trace.x < G_SIZE && trace.y >= 0 && trace.y < G_SIZE){
+    boolean hit = false;
+    while(trace.x >= 0 && trace.x < G_SIZE && trace.y >= 0 && trace.y < G_SIZE && !hit){
       trace.add(dir);
+      for(int i = 0; i < pos.size()-1; i++){
+        if(trace.x == pos.get(i).x && trace.y == pos.get(i).x) hit = true;
+      }
+
     }
     return map(dist(trace.x, trace.y, head().x, head().y), 0, G_SIZE, 1, 0);
   }
@@ -98,14 +113,14 @@ class Food {
   }
 
   void reset(Snake s) {
-    boolean taken = false;
-    do{
+    boolean taken = true;
+    while(taken){
       pos = new PVector(int(random(G_SIZE)), int(random(G_SIZE)));
       for(int i = 0; i < s.pos.size(); i++){
         PVector p = s.pos.get(i);
-        if(p.x == pos.x && p.y == pos.y) taken = true;
+        if(p.x == pos.x && p.y == pos.y) taken = false;
       }
-    }while(!taken);
+    }
   }
 
   void display() {
