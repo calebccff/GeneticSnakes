@@ -1,4 +1,4 @@
-final int TICKRATE = 60; //Ticks per second
+final int TICKRATE = 120; //Ticks per second
 
 class GameThread extends Thread { //A custom thread class to easily multithread
   private Thread t;

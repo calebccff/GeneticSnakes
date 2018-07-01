@@ -1,78 +1,49 @@
-class Game{
-  PGraphics canvas = createGraphics(G_SIZE, G_SIZE);
+final int TICKRATE = 60;
+
+class Game extends Thread{
+  // Threading stuff
+  Private Thread t;
+  String id;
+
+  //Parts of the game
   Snake snake;
   Food food;
-  GameThread thread;
-  float score = 0;
-  int time = 0;
-  int timeAlive = 0;
+
+  // Scoring stuff
+  float score, timeAlive, timeSinceEat;
   boolean alive = true;
 
-  Game() {
+  //Rendering stuff
+  PGraphics canvas = createGraphics(GRID_SIZE, GRID_SIZE);
+
+  Game(int id){ //New random game
+    id = str(id);
     canvas.noSmooth();
-    snake = new Snake(canvas);
-    food = new Food(canvas);
-    food.reset(snake);
-
-    thread = new GameThread(this);
-    thread.create();
+    food = new Food();
+    snake = new Snake();
   }
 
-  Game(Game p){
-    canvas.noSmooth();
-    snake = new Snake(canvas, p.snake);
-    food = new Food(canvas);
-    food.reset(snake);
-
-    thread = new GameThread(this);
-    thread.create();
+  Game(int id, Game p){ //new game with parent
+    this(id);
+    snake = new Snake(p.snake);
   }
 
-  boolean run() {
-    time++;
-    timeAlive++;
-    boolean eaten = snake.run(food);
-    if (eaten) {
-      food.reset(snake);
-      score += 20f/float(time);
-      time = 0;
+  void runLoop(){
+    
+  }
+
+  public void run(){ //Overrides super.run(), is called by the thread;
+    while(true){
+      int startTime = millis();
+      runLoop();
+      delay(constrain(1000/TICKRATE-(millis()-startTime), 0, 1000));
     }
-    if(!alive || (snake.checkDead() && timeAlive > 5) || time > 8000){
-      alive = false;
-      return false;
+  }
+
+  public void create(){ //Overrides super.create(), makes everything GO
+    if(t == null){
+      t = new Thread(this, id);
+      t.start();
     }
-    return true;
-  }
-
-  float fitness(){
-    return
-    score*20
-    +timeAlive*0.003
-    +snake.pos.size()*0.1;
-
-  }
-
-  void stop(){
-    alive = false;
-  }
-
-  void display(int x, int y, int size) {
-    canvas.beginDraw();
-    canvas.background(0);
-    try{
-      food.display();
-      snake.display();
-    }catch(Exception e){ //Can crash cuz threading :/ I'm not gonna synchronize this....
-      e.printStackTrace();
-    }
-
-    // canvas.stroke(255);
-    // canvas.line(0, 0, canvas.width-1, 0);
-    // canvas.line(canvas.width-1, 0, canvas.width-1, canvas.height-1);
-    // canvas.line(canvas.width-1, canvas.height-1, 0, canvas.height-1);
-    // canvas.line(0, canvas.height-1, 0, 0);
-
-    canvas.endDraw();
-    image(canvas, x, y, size, size);
   }
 }
