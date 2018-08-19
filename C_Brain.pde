@@ -1,12 +1,12 @@
-final float MUTATION_RATE = 0.05;
-float MUTATION_AMT = 0.2; //Decrease over time?
+float MUTATION_RATE = 0.015;
+float MUTATION_AMT = 0.02; //Decrease over time?
 
 class Brain{
   private final float SYNAPSE_MIN = -1f; //Some constants to fine tune the NN, could have a drastic effect on evolution
   private final float SYNAPSE_MAX = 1f;
 
-  float[] dna;
-  private int chromCount;
+  float[] dna = new float[1];
+  private int chromCount = -1;
 
   private Node[][] nodesVisible = new Node[2][]; //Staggered 2d array of Node objects that make up the BRAIN
   private Node[][] nodesHidden;
@@ -14,33 +14,27 @@ class Brain{
   private int countSynapses(int inp, int[] hidden, int out){
     int sum = inp*hidden[0];
     sum += hidden[hidden.length-1]*out;
-    for(int i = 1; i < hidden.length-1; i++){
+    for(int i = 0; i < hidden.length-1; i++){
       sum += hidden[i] * hidden[i+1];
     }
     return sum;
   }
 
-  private int nextChromosome(){
-    return dna[chromCount];
-    chromCount++;
+  private float nextChromosome(){
+    return dna[++chromCount];
   }
 
-  void randomDNA(){
+  void randomDNA(int lenInput, int[] lenHidden, int lenOutput){
     dna = new float[countSynapses(lenInput, lenHidden, lenOutput)];
     for(int i = 0; i < dna.length; i++){
       dna[i] = random(1);
     }
   }
 
-  Brain(int lenInput, int[] lenHidden, int lenOutput) { //Default constructor, specify the lengths of each layer
+  void initNodes(int lenInput, int[] lenHidden, int lenOutput){
     nodesVisible[0] = new Node[lenInput]; //Initialises the second dimension of the array
     nodesVisible[1] = new Node[lenOutput];
     nodesHidden = new Node[lenHidden.length][];
-
-
-    if(dna.length < 1){
-      randomDNA();
-    }
 
     for(int i = 0; i < nodesVisible[0].length; i++){
       nodesVisible[0][i] = new Node(0);
@@ -55,7 +49,7 @@ class Brain{
     }
     for(int i = 1; i < nodesHidden.length; i++){ //The rest of the hidden layers
       for(int j = 0; j < nodesHidden[i].length; j++){
-        nodesHidden[i][j] = new Nodes(nodesHidden[i-1].length);
+        nodesHidden[i][j] = new Node(nodesHidden[i-1].length);
       }
     }
 
@@ -64,13 +58,18 @@ class Brain{
     }
   }
 
+  Brain(int lenInput, int[] lenHidden, int lenOutput) { //Default constructor, specify the lengths of each layer
+    randomDNA(lenInput, lenHidden, lenOutput);
+    initNodes(lenInput, lenHidden, lenOutput);
+  }
+
   Brain(Brain a, Brain b){
-    float[] lenHidden = new float[a.nodesHidden.length];
+    int[] lenHidden = new int[a.nodesHidden.length];
     for(int i = 0; i < lenHidden.length; i++){
       lenHidden[i] = a.nodesHidden[i].length;
     }
-    dna = new float[countSynapses(a.nodesVisible[1].length, lenHidden, a.nodesVisible[1].length)];
-    for(int i = 0; i < a.dna.length; i++){
+    dna = new float[a.dna.length];
+    for(int i = 0; i < dna.length; i++){
       float r = random(1);
       if(r < MUTATION_RATE){
         dna[i] = random(1);
@@ -80,8 +79,8 @@ class Brain{
         dna[i] = a.dna[i]+random(-MUTATION_AMT, MUTATION_AMT);
       }
     }
+    initNodes(a.nodesVisible[0].length, lenHidden, a.nodesVisible[1].length);
 
-    this(a.nodesVisible[1].length, lenHidden, a.nodesVisible[1].length)
   }
 
   float[] propForward(float[] inputs) { //Propagates forward, passes inputs through the net and gets an output.
@@ -106,7 +105,7 @@ class Brain{
     float[] output = new float[nodesVisible[nodesVisible.length-1].length]; //Gets the outputs from the last layer
     for (int i = 0; i < output.length; ++i) {
       output[i] = nodesVisible[nodesVisible.length-1][i].getValue();
-      output[i] = sig(output[i]);
+      //output[i] = sig(output[i]);
     }
 
     return output; //Return them
@@ -132,14 +131,18 @@ class Brain{
 
     void propForward(Node[] nodes){ //Takes value from previous layers
       value = 0;
-      for(int i = 0; i M nodes.length; i++){
-        value += nodes[i].getValue()*synapse[i];
+      for(int i = 0; i < nodes.length; i++){
+        value += nodes[i].getValue()*synapses[i];
       }
-      //value = sig(value);
+      value = sig(value);
     }
 
     float getValue(){
       return value;
+    }
+
+    void setValue(float x){
+      this.value = x;
     }
   }
 }

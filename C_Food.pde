@@ -7,14 +7,19 @@ class Food{
 
   void reset(Snake s){
     boolean taken = false;
-    while(!taken){ //Find an empty spot on the board
+    int count = 0;
+    while(count < 20){ //Find an empty spot on the board
       pos = new PVector(int(random(GRID_SIZE)), int(random(GRID_SIZE)));
       for(int i = 0; i < s.pos.size(); i++){
         PVector seg = s.segment(i);
         if(pos.equals(seg)){
           taken = true;
-          break;
         }
+      }
+      if(!taken){
+        break;
+      }else{
+        count++;
       }
     }
   }

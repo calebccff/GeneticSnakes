@@ -8,15 +8,31 @@ class Snake{
    */
 
   Brain brain;
+  float maxDisplacement;
+  PVector startPos;
 
   Snake(){
-    brain = new Brain(4, new int[] {3, 2}, 1);
-    initSegments(3);
+    brain = new Brain(6, new int[] {5, 3}, 1);
+    config();
   }
 
+  Snake(Snake a, Snake b){
+    brain = new Brain(a.brain, b.brain);
+    config();
+  }
+
+  void config(){
+    for(int i = 0; i < random(5); i++){
+      dir.rotate(HALF_PI);
+    }
+    dir = rounded(dir);
+    initSegments(4);
+    startPos = head();
+
+  }
   void initSegments(int count){
     Integer[] p = new Integer[2];
-    PVector po = new PVector(int(random(GRID_SIZE)), int(random(GRID_SIZE)));
+    PVector po = new PVector(int(GRID_SIZE/2), int(GRID_SIZE/2));
     p[0] = round(po.x);
     p[1] = round(po.y);
     pos.add(p);
@@ -25,32 +41,39 @@ class Snake{
     }
   }
 
-  Snake(Snake p){
-    brain = new Brain(p.brain);
-    initSegments(3);
+  void run(Food f, int n){
+    move(f, n);
   }
 
-  void run(Food f){
-    move(f);
-  }
-
-  void move(Food f){
-    float[] inputs = new float[4]; //Obstacle in front, to left, to right AND food to left/right
+  void move(Food f, int n){
+    float[] inputs = new float[6]; //Obstacle in front, to left, to right AND dist to food
     PVector search = PVector.fromAngle(dir.heading());
-    search = rounded(search.rotate(-HALF_PI));
-    for(int i = 0; i < inputs.length-1; i++){
+    search = rounded(search.rotate(-HALF_PI)); //LEFT, FRONT, RIGHT
+    for(int i = 0; i < 3; i++){
       inputs[i] = findObstacle(head(), search);
+      search = rounded(search.rotate(HALF_PI)); //Rotate 90 degrees to search in each direction
     }
-    inputs[3] = map(abs(head().mag()-f.pos.mag()), 0, GRID_SIZE, 1, 0);
+    search = PVector.fromAngle(dir.heading());
+    search = rounded(search.rotate(-HALF_PI)); //LEFT, FRONT, RIGHT
+    for(int i = 3; i < inputs.length-1; i++){
+      inputs[i] = findObstacle(head(), search, f);
+      search = rounded(search.rotate(HALF_PI)); //Rotate 90 degrees to search in each direction
+    }
+    // try{
+    //   inputs[inputs.length-1] = noise(n+millis()/100*0.01);
+    // }catch(ArithmeticException e){
+    //   inputs[inputs.length-1] = 0.5;
+    // }
 
     float output = brain.propForward(inputs)[0];
-    println(output);
+    //println(Arrays.toString(inputs)+"\n - "+output);
     if(output < 0.45){
       dir = rounded(dir.rotate(-HALF_PI));
     }else if(output > 0.55){
       dir = rounded(dir.rotate(HALF_PI));
     }
     moveSegment();
+    maxDisplacement = constrain(abs(head().mag()-startPos.mag()), maxDisplacement, dist(0, 0, GRID_SIZE, GRID_SIZE));
   }
 
   void moveSegment(){
@@ -61,12 +84,12 @@ class Snake{
     pos.add(newH);
   }
 
-  float findObstacle(PVector start, PVector dir){
+  float findObstacle(PVector start, PVector dir){ //Closests object, segment of snake or wall
     PVector trace = start.copy();
     boolean hit = false;
     while(trace.x == constrain(trace.x, 0, GRID_SIZE) && trace.y == constrain(trace.y, 0, GRID_SIZE) && !hit){
       trace = rounded(PVector.add(trace, dir));
-      for(int i = 0; i < pos.size()-2; i++){ //All body segments excluding head and neck
+      for(int i = 0; i < pos.size()-1; i++){ //All body segments excluding head
         PVector seg = segment(i);
         if(trace.equals(seg)){
           hit = true;
@@ -77,8 +100,21 @@ class Snake{
     return map(abs(start.mag()-trace.mag()), 0, GRID_SIZE, 1, 0);
   }
 
+  float findObstacle(PVector start, PVector dir, Food f){ //dist to food in each direction
+    PVector trace = start.copy();
+    boolean hit = false;
+    while(trace.x == constrain(trace.x, 0, GRID_SIZE) && trace.y == constrain(trace.y, 0, GRID_SIZE) && !hit){
+      trace = rounded(PVector.add(trace, dir));
+      if(trace.equals(rounded(f.pos))){
+        hit = true;
+        break;
+      }
+    }
+    return map(abs(start.mag()-trace.mag()), 0, GRID_SIZE, 0, 1);
+  }
+
   boolean eatFood(Food f){
-    return f.pos.equals(head());
+    return rounded(f.pos).equals(rounded(head()));
   }
 
   PVector head(){

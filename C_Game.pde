@@ -1,6 +1,6 @@
-final int TICKRATE = 60;
+int TICKRATE = 300;
 
-class Game extends Thread{
+class Game extends Thread implements Comparable<Game>{
   // Threading stuff
   private Thread t;
   String id;
@@ -11,6 +11,7 @@ class Game extends Thread{
 
   // Scoring stuff
   float score, timeAlive, timeSinceEat;
+  float fitnessBonus = 0;
   boolean alive = true;
 
   //Rendering stuff
@@ -18,18 +19,19 @@ class Game extends Thread{
 
   Game(int id){ //New random game
     this.id = str(id);
-    canvas.noSmooth();
+    //canvas.noSmooth();
     food = new Food();
     snake = new Snake();
   }
 
-  Game(int id, Game p){ //new game with parent
+  Game(int id, Game a, Game b){ //new game with parent
     this(id);
-    snake = new Snake(p.snake);
+    snake = new Snake(a.snake, b.snake);
   }
 
   void display(int x, int y, int size){
     canvas.beginDraw();
+    canvas.background(0);
     snake.display(canvas);
     food.display(canvas);
     canvas.endDraw();
@@ -37,14 +39,13 @@ class Game extends Thread{
   }
 
   void runLoop(){
-    snake.run(food);
+    snake.run(food, int(id)*1000);
     alive = !checkDead();
     if(!alive){
-      t.stop();
       return;
     }
     if(snake.eatFood(food)){
-      score += 20f/timeSinceEat;
+      score += 1;
       timeSinceEat = 0;
       food.reset(snake);
 
@@ -57,21 +58,65 @@ class Game extends Thread{
 
   float fitness(){
     return
-    score*5
-    +timeAlive*0.003
-    +snake.pos.size()*2;
+    sq(score+1)
+    +constrain(timeAlive/40, 0, 20)
+    +map(snake.maxDisplacement, 0, dist(0, 0, GRID_SIZE, GRID_SIZE), 0, 10)
+    +fitnessBonus
 
+    ;
   }
 
-  boolean checkDead(){
+  void finish(){
+    fitnessBonus = fitness()*0.2;
+    alive = false;
+  }
+
+  @Override
+  public int compareTo(Game g){
+    float f = fitness();
+    float fo = g.fitness();
+
+    if(alive && !g.alive){
+      return -1;
+    }else if(!alive && g.alive){
+      return 1;
+    }else if(!alive && !g.alive){
+      return 0;
+    }
+    if(snake.pos.size() > g.snake.pos.size()){
+      return -1;
+    }
+    return round(fo-f); //Descending by fitness
+  }
+
+  boolean checkDead(){ //TODO
+    PVector head = snake.head();
+    for(int i = 0; i < snake.pos.size()-1; i++){ //Check if snake eats itself
+      PVector seg = snake.segment(i);
+      if(dist(head.x, head.y, seg.x, seg.y) < 0.5){ //Both in same square, should use == 0 but don't trust myself
+        return true;
+      }
+    }
+    if(head.x < 0 || head.x > GRID_SIZE-1 || head.y < 0 || head.y > GRID_SIZE-1){ //Snake hits the edge
+      return true;
+    }
+    if(timeSinceEat > 1200){ //Alive for more than 500 ticks without eating
+      finish();
+      return true;
+    }
     return false;
   }
 
   public void run(){ //Overrides super.run(), is called by the thread;
-    while(true){
+    while(alive){
       int startTime = millis();
-      runLoop();
-      delay(constrain(1000/TICKRATE-(millis()-startTime), 0, 1000));
+      try{
+        runLoop();
+        delay(constrain(1000/TICKRATE-(millis()-startTime), 0, 1000));
+      }catch(ThreadDeath e){
+        println("Something happened");
+        alive = !checkDead();
+      }
     }
   }
 
